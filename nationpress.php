@@ -105,7 +105,7 @@ class NationPress {
 	public function register_options_page() {
 
 		// main page
-		add_options_page('Nationbuilder', 'Nationbuilder', 'manage_options', 'nationpress_options', array($this, 'include_options'));
+		add_options_page('NationPress', 'NationPress', 'manage_options', 'nationpress_options', array($this, 'include_options'));
 		add_action('admin_init', array($this, 'plugin_options'));
 		
 	}
