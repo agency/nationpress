@@ -302,7 +302,10 @@ class NationPress {
 			$response['tag'] == true;
 		} else {
 			$response['tag'] == false;
-		}	
+		}
+
+		// Apply Filters
+		$response = apply_filters('nationpress_response',$response, $match_response, $tag_response);
 
 		// Return 
 		return $response;
