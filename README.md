@@ -1,9 +1,12 @@
 # NationPress by Agency
+
 Connect your WordPress site to your Nation.
+
 ------
 
 # Hooks & Filters
-`nationpress_response`
+
+**nationpress_response**
 
 ```
 $response = apply_filters('nationpress_response', $response, $match_response, $tag_response);
