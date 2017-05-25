@@ -4,6 +4,17 @@ Connect your WordPress site to your Nation.
 
 ------
 
+# Shortcode
+
+**[nationpress-signup]**
+Will signup the user and apply the default tags.
+
+
+**[nationpress-signup tags="wpsignup,again"]]**
+User the listed tags instead of the default ones.
+
+------
+
 # Hooks & Filters
 
 **nationpress_response**

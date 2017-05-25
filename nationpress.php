@@ -50,10 +50,43 @@ class NationPress {
 		// Default wordpress account creation hooks
 		if (is_multisite()) add_action('wpmu_activate_user', array($this, 'push_WPMU_user'), 10, 3);
 		else add_action('user_register', array($this, 'push_WP_user'), 10, 1);
+
+		// Shortcodes
+		add_shortcode('nationpress-signup', array($this,'shortcode_signup') );
 		
 		// Create Nation
 		if ($this->options_exist()) $this->nation = new Nation($this->options);
 				
+	}
+
+	public function save($vars){
+
+		print "<pre>";
+		var_dump($vars);
+		print "</pre>";
+		die;
+
+		$response = $this->push_to_NB( $vars['email'], $vars['first_name', $vars['last_name'], $vars['tags']);
+		
+	}
+
+
+	/**
+	 * Shortcode Signup Form
+	 * @param array $attr 
+	 * @param string $content 
+	 * @return null
+	 */
+
+	public function shortcode_signup($attr, $content){
+
+		ob_start();
+
+		if(!is_array($attr)) $attr = array();
+
+		$this->template_include('signup.php',$attr,'attr');
+		return ob_get_clean();
+
 	}
 
 
@@ -69,18 +102,21 @@ class NationPress {
 		if(!wp_verify_nonce( $_POST['_wpnonce'], 'nationpress')){ $this->redirect($_POST['_wp_http_referer']); }
 
 
-		$type = $_POST['nationbuilder']['type'];
+		// $type = $_POST['nationbuilder']['type'];
 
-		switch ($type) {
+		switch ($_POST['nationpress']) {
+
 			case 'subscribe':
 				$response = $this->push_subscriber();
-				if ($response['errors'] > 0) {
-					wp_redirect( '?subscribe=error' );
-				} else {
-					wp_redirect( '?subscribe=success' );
-				}
+				if ($response['errors'] > 0) wp_redirect( '?subscribe=error' );
+				else  wp_redirect( '?subscribe=success' );
 				exit;
 				break;
+
+			case 'save':
+				$this->save($_POST);
+				break;
+
 			default:
 				break;
 		}
@@ -247,7 +283,7 @@ class NationPress {
 	 * @return type
 	 */
 
-	public function push_to_NB( $email, $first_name, $last_name, $tags = null ) {
+	public function push_to_NB( $email, $first_name = null, $last_name = null, $tags = null ) {
 
 		// Tags
 		if(!tags){
