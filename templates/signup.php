@@ -1,5 +1,6 @@
 
-<form class="signup" action="/" method="post">
+
+<form class="signup" action="<?php echo get_permalink(); ?>" method="post">
 
 	<input type="hidden" name="nationpress" value="save">
 	<?php wp_nonce_field( 'nationpress' ); ?>
@@ -18,6 +19,8 @@
 		<label class="label" for="email">Email</label>
 		<input class="input" type="email" name="email" placeholder="Email" required="required">
 	</span>
+
+	<?php do_action('nationpress_before_submit'); ?>
 
 	<?php if($attr['tags']) : ?><input type="hidden" name="<?php echo $attr['tags'];?>"><?php endif; ?>
 

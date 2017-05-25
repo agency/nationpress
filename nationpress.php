@@ -37,36 +37,44 @@ class NationPress {
 		
 		$this->errors = false;
 		$this->notice = false;
+		$this->messages = false;
 		$this->options = $this->get_options();
 		
 		// Actions
 		add_action('admin_menu', array($this, 'register_options_page'));
 		add_action('wp_loaded', array($this , 'forms'));
+		add_action('parse_request', array($this , 'endpoints'));
 
 		// Notices (add these when you need to show the notice)
 		add_action( 'admin_notices', array($this, 'admin_success'));
 		add_action( 'admin_notices', array($this, 'admin_error'));
+		add_action( 'nationpress_messages',array($this,'frontend_messages'));
+
+		// Shortcodes
+		add_shortcode('nationpress-signup', array($this,'shortcode_signup') );
 
 		// Default wordpress account creation hooks
 		if (is_multisite()) add_action('wpmu_activate_user', array($this, 'push_WPMU_user'), 10, 3);
 		else add_action('user_register', array($this, 'push_WP_user'), 10, 1);
-
-		// Shortcodes
-		add_shortcode('nationpress-signup', array($this,'shortcode_signup') );
 		
 		// Create Nation
 		if ($this->options_exist()) $this->nation = new Nation($this->options);
 				
 	}
 
-	public function save($vars){
+	public function save($vars, $return = true){
+		
+		$response = $this->push( $vars['email'], $vars['first_name'], $vars['last_name'], $vars['tags']);
+		
+		if($response['person_id']){
+			$result = array('success'=>true,'response'=>$response);
+		} else {
+			$result = array('errors'=>true,'response'=>$response);
+		}
 
-		print "<pre>";
-		var_dump($vars);
-		print "</pre>";
-		die;
+		if($return == true) return $result;
 
-		$response = $this->push_to_NB( $vars['email'], $vars['first_name', $vars['last_name'], $vars['tags']);
+		$this->output_json($result);
 		
 	}
 
@@ -101,9 +109,6 @@ class NationPress {
 		if (!isset($_POST['nationpress'])) return;
 		if(!wp_verify_nonce( $_POST['_wpnonce'], 'nationpress')){ $this->redirect($_POST['_wp_http_referer']); }
 
-
-		// $type = $_POST['nationbuilder']['type'];
-
 		switch ($_POST['nationpress']) {
 
 			case 'subscribe':
@@ -119,6 +124,30 @@ class NationPress {
 
 			default:
 				break;
+		}
+
+	}
+
+	/**
+	 * Endpoints
+	 * Custom wordpress endpoints
+	 * @param Object $wp
+	 * @return null
+	 */
+
+	public function endpoints($wp) {
+
+		$pagename = (isset($wp->query_vars['pagename'])) ? $wp->query_vars['pagename'] : $wp->request;
+
+		switch ($pagename) {
+
+			case 'nationpress/api/save':
+				$results = $this->save($_POST,false);
+				break;
+
+			default:
+				break;
+
 		}
 
 	}
@@ -238,7 +267,7 @@ class NationPress {
 		is_multisite() ? wpmu_signup_user( $username, $email, $meta ) : wp_create_user( $username, $password, $email );
 
 		// Send to Nationbuilder
-		$response = $this->push_to_NB( $email, $first_name, $last_name );
+		$response = $this->push( $email, $first_name, $last_name );
 
 		return $response;
 	}
@@ -254,7 +283,7 @@ class NationPress {
 		$first_name = $_POST['first_name'];
 		$last_name = $_POST['last_name'];
 
-		$this->push_to_NB( $email, $first_name, $last_name );
+		$this->push( $email, $first_name, $last_name );
 	}
 
 	/**
@@ -272,7 +301,7 @@ class NationPress {
 		$first_name = $meta['first_name'];
 		$last_name = $meta['last_name'];
 
-		$this->push_to_NB( $email, $first_name, $last_name );
+		$this->push( $email, $first_name, $last_name );
 	}
 
 	/**
@@ -283,7 +312,7 @@ class NationPress {
 	 * @return type
 	 */
 
-	public function push_to_NB( $email, $first_name = null, $last_name = null, $tags = null ) {
+	public function push( $email, $first_name = null, $last_name = null, $tags = null ) {
 
 		// Tags
 		if(!tags){
@@ -303,6 +332,7 @@ class NationPress {
 		if ($match_response['code'] == 200) {
 
 			$person_id = $match_response['result']['person']['id'];
+			$response['person_id'] = $person_id;
 
 			// set response
 			$response['duplicate'] = true;
@@ -319,12 +349,14 @@ class NationPress {
 
 			// get ID created by NB
 			$person_id = $nb_response['result']['person']['id'];
+			$response['person_id'] = $person_id;
 
 			// set response
 			$response['duplicate'] = false;
 
 		}
 		
+
 		// Add Tags
 		if (!empty($tags)) {
 			foreach ($tags as $tag) {
@@ -401,6 +433,21 @@ class NationPress {
 
 	}
 
+	public function frontend_messages(){
+
+		if(!$this->messages) return;
+
+		foreach($this->messages as $messages) :
+		?>
+
+			<div class="message"><?php echo $message; ?></div>
+
+		<?php
+		endforeach; 
+
+
+	}
+
 	/**
 	 * Outputs a WordPress error notice
 	 *
@@ -455,13 +502,20 @@ class NationPress {
 
 	}
 
+	public function output_json($array) {
+
+		header('Content-type: application/json');
+		echo json_encode($array);
+		exit();
+
+	}
+
 
 }
 
-
-/**
- * @var class NationPress $nationpress
- */
+// ------------------------------------
+// Init
+// ------------------------------------
 
 $nationpress = new NationPress();
 

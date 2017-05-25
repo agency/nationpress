@@ -33,6 +33,26 @@ function your_custom_function($response, $person_response, $tag_response){
 
 ```
 
+**nationpress_before_submit**
+```
+add_action('nationpress_before_submit','add_more_fields');
+function add_more_fields(){
+	
+	?>
+		<input type="text" name="myfield">
+
+	<?php
+
+}
+```
+
+
+# Endpoints
+
+**POST: /nationpress/api/save**
+```
+@returns JSON
+```
 
 
 [Agency](http://agency.sc)
