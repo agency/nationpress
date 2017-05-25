@@ -2,7 +2,7 @@
 Connect your WordPress site to your Nation.
 ------
 
-#Hooks & Filters
+# Hooks & Filters
 `nationpress_response`
 
 ```
