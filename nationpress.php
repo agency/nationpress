@@ -10,15 +10,10 @@
  * Author URI: http://agency.sc/
  */
 
-if (!defined('ABSPATH')) {
-	exit; // Exit if accessed directly
-}
+if (!defined('ABSPATH')) exit;
 
+// Includes
 require_once(  WP_PLUGIN_DIR . '/nationpress/libs/nationbuilder-api/nationbuilder.php' );
-
-/*==========  Activation Hook  ==========*/
-register_activation_hook( __FILE__, array( 'NationPress', 'install' ) );
-
 
 /**
  * Main Nationbuilder Push Class
@@ -26,6 +21,7 @@ register_activation_hook( __FILE__, array( 'NationPress', 'install' ) );
  * @class NationPress
  * @version 0.1
  */
+
 class NationPress {
 
 	public $errors = false;
@@ -37,48 +33,41 @@ class NationPress {
 		$this->folder = basename($this->path);
 		$this->dir = plugin_dir_url(__FILE__);
 		$this->version = '1.0';
+		$this->slug = 'nationpress';
 		
 		$this->errors = false;
 		$this->notice = false;
-
 		$this->options = $this->get_options();
-
-		if ($this->options_exist()) {
-			$this->nation = new Nation($this->options);
-		}
-
+		
 		// Actions
 		add_action('admin_menu', array($this, 'register_options_page'));
 		add_action('wp_loaded', array($this , 'forms'));
-		if ( is_multisite() ) {
-			add_action('wpmu_activate_user', array($this, 'push_WPMU_user'), 10, 3);
-		} else {
-			add_action('user_register', array($this, 'push_WP_user'), 10, 1);
-		}
+
+		// Notices (add these when you need to show the notice)
+		add_action( 'admin_notices', array($this, 'admin_success'));
+		add_action( 'admin_notices', array($this, 'admin_error'));
+
+		// Default wordpress account creation hooks
+		if (is_multisite()) add_action('wpmu_activate_user', array($this, 'push_WPMU_user'), 10, 3);
+		else add_action('user_register', array($this, 'push_WP_user'), 10, 1);
+		
+		// Create Nation
+		if ($this->options_exist()) $this->nation = new Nation($this->options);
 				
-	}
-
-	public static function install() {
-
-		/**
-		*
-		* Add methods here that should be run when the plugin is activated.
-		*
-		**/
-
 	}
 
 
 	/**
-	 * Form processing
-	 * 
-	 * This function powers your form processing,
-	 * based on the value of a hidden "plugin_starter_action" field
-	 * 
-	 * Route forms to other functions within this class.
+	 * Form Processing
+	 * Form processing for custom signup forms
+	 * @return null
 	 */
+
 	public function forms() {
-		if (!isset($_POST['nationbuilder'])) return;
+		
+		if (!isset($_POST['nationpress'])) return;
+		if(!wp_verify_nonce( $_POST['_wpnonce'], 'nationpress')){ $this->redirect($_POST['_wp_http_referer']); }
+
 
 		$type = $_POST['nationbuilder']['type'];
 
@@ -100,45 +89,37 @@ class NationPress {
 
 
 	/**
-	 * Register options page
+	 * Register Options Page
+	 * @return null
 	 */
+
 	public function register_options_page() {
 
 		// main page
-		add_options_page('NationPress', 'NationPress', 'manage_options', 'nationpress_options', array($this, 'include_options'));
+		add_options_page('NationPress', 'NationPress', 'manage_options', 'nationpress_options', function(){ $this->template_include('options.php'); });
 		add_action('admin_init', array($this, 'plugin_options'));
 		
 	}
 
-
 	/**
-	 * Get options template
+	 * Plugin Options
+	 * Register the plugin options with wordpress
+	 * @return null
 	 */
-	public function include_options() { require('templates/options.php'); }
 
-
-	/**
-	 * Register plugin settings
-	 * 
-	 * Register each unique setting administered on your 
-	 * options page in a new line in the array.
-	 */
 	public function plugin_options() {
 
 		$keys = $this->get_option_keys();
 
-		foreach ($keys as $key) {
-			register_setting('nationpress_options', $key);
-		}
+		foreach ($keys as $key) register_setting('nationpress_options', $key);
 
 	}
 
 
 	/**
-	 * 
-	 * 
-	 * 
-	 * 
+	 * Get Option Keys
+	 * Define the required keys for the plugin
+	 * @return array
 	 */
 
 	public function get_option_keys() {
@@ -157,12 +138,10 @@ class NationPress {
 
 	}
 
-
 	/**
-	 * 
-	 * 
-	 * 
-	 * 
+	 * Get Options
+	 * Get the saved values of the options from wordpress
+	 * @return array
 	 */
 
 	public function get_options() {
@@ -180,18 +159,19 @@ class NationPress {
 	}
 
 	/**
-	 * 
-	 * 
-	 * 
-	 * 
-	*/
+	 * Options Exist
+	 * Validate the saved options
+	 * @return boolean
+	 */
 
 	public function options_exist() {
+
 
 		$keys = $this->options;
 
 		foreach ($keys as $key) {
 			if ($key == '') {
+				$this->errors[] = "NationPress: Complete your setup <a href=\"/wp-admin/admin.php?page=nationpress_options\">here</a>.";
 				return false;
 			}
 		}
@@ -201,27 +181,17 @@ class NationPress {
 	}
 
 	/**
-	 * Push subscriber (non WP user) details
-	 *
-	 *
-	 *
+	 * Push Subscriber
+	 * @return array/object
 	 */
+
 	public function push_subscriber() {
-		// get user data
+		
+
 		$email = $_POST['user_email'];
 		$first_name = $_POST['first_name'];
 		$last_name = $_POST['last_name'];
-		// $name = $_POST['nationbuilder']['name'];
 
-		// // explode name
-		// if (strpos($name, ' ') !== false) {
-		// 	$name_array = explode(' ', $name);
-		// 	$first_name = $name_array[0];
-		// 	$last_name = end($name_array);
-		// } else {
-		// 	$first_name = $name;
-		// 	$last_name = '';
-		// }
 
 		$meta['first_name'] = $first_name;
 		$meta['last_name'] = $last_name;
@@ -231,18 +201,16 @@ class NationPress {
 		$password = wp_generate_password();
 		is_multisite() ? wpmu_signup_user( $username, $email, $meta ) : wp_create_user( $username, $password, $email );
 
-		//wp_new_user_notification( $user_id, $password );
-
+		// Send to Nationbuilder
 		$response = $this->push_to_NB( $email, $first_name, $last_name );
 
 		return $response;
 	}
 
 	/**
-	 * Push WP user details
-	 *
-	 *
-	 *
+	 * New Wordpress User
+	 * @param init $user_id 
+	 * @return null
 	 */
 	public function push_WP_user( $user_id ) {
 		// get user data
@@ -254,11 +222,13 @@ class NationPress {
 	}
 
 	/**
-	 * Push WP user details on Multisite
-	 *
-	 *
-	 *
+	 * New Multisite Wordpress User
+	 * @param init $user_id 
+	 * @param string $password 
+	 * @param array $meta 
+	 * @return null
 	 */
+
 	public function push_WPMU_user( $user_id, $password, $meta ) {
 		// get user data
 		$userdata = get_userdata( $user_id );
@@ -271,21 +241,26 @@ class NationPress {
 
 	/**
 	 * Push to Nationbuilder
-	 *
-	 *
-	 *
+	 * @param int $email 
+	 * @param string $first_name 
+	 * @param string $last_name 
+	 * @return type
 	 */
-	public function push_to_NB( $email, $first_name, $last_name ) {
 
-		$tags = array();
-		$tag_string = $this->options['tags'];
-		$tags = explode(', ', $tag_string);
+	public function push_to_NB( $email, $first_name, $last_name, $tags = null ) {
 
-		// create response array
+		// Tags
+		if(!tags){
+			$tags = array();
+			$tag_string = $this->options['tags'];
+			$tags = explode(', ', $tag_string);
+		}
+
+		// Response
 		$response = array();
 		$response['errors'] = 0;
 
-		// search for existing email
+		// Dedupe Email against Nationbuilder
 		$match_response = $this->nation->matchPerson($email);
 
 		// get ID if email exists, or add to NB if not
@@ -314,7 +289,7 @@ class NationPress {
 
 		}
 		
-		// add tags
+		// Add Tags
 		if (!empty($tags)) {
 			foreach ($tags as $tag) {
 				$tag_response = $this->nation->tagPerson($person_id, $tag);
@@ -322,14 +297,122 @@ class NationPress {
 			}
 		}
 		
-		// set response
+		// Set Response
 		if ($tag_response['code'] == 200) {
 			$response['tag'] == true;
 		} else {
 			$response['tag'] == false;
 		}	
 
+		// Return 
 		return $response;
+
+	}
+
+
+	/**
+	 * Template
+	 * @param string $filename the name of the template file
+	 * @return string the path to include
+	 */
+
+	public function template($filename) {
+
+		// check theme
+		$theme = get_template_directory() . '/'.$this->slug.'/' . $filename;
+
+		if (file_exists($theme)) $path = $theme;
+		else $path = $this->path . 'templates/' . $filename;
+		
+		return $path;
+
+	}
+
+
+   	/**
+   	 * Template Incluce
+   	 * @param string $template The name of the template file
+   	 * @param *|null $data Data available within the file
+   	 * @param string|null $name the value to call the date
+   	 * @return null
+   	 */
+
+	public function template_include($template,$data = null,$name = null){
+
+		if(isset($name)){ ${$name} = $data; }
+		$path = $this->template($template);
+		require($path);
+
+	}
+
+
+
+	/**
+	 * Redirect
+	 * Simple wordpress redirect
+	 * @param string|int $path 
+	 * @return null
+	 */
+
+	public function redirect($path) {
+
+		if(is_numeric($path)){ $path = get_permalink($path); }
+		wp_safe_redirect( $path );
+	  	exit();
+
+	}
+
+	/**
+	 * Outputs a WordPress error notice
+	 *
+	 * Push your error to $this->errors then show with:
+	 * add_action( 'admin_notices', array($this, 'admin_error'));
+	 */
+	public function admin_error() {
+
+		if(!$this->errors) return;
+
+		foreach($this->errors as $error) :
+
+	?>
+
+		<div class="error settings-error notice is-dismissible">
+
+			<p><strong><?php print $error ?></strong></p>
+			<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>
+
+		</div>
+
+	<?php
+
+		endforeach;
+
+	}
+
+	/**
+	 * Outputs a WordPress notice
+	 *
+	 * Push your error to $this->notices then show with:
+	 * add_action( 'admin_notices', array($this, 'admin_success'));
+	 */
+	public function admin_success() {
+
+		if(!$this->notices) return;
+
+		foreach($this->notices as $notice) :
+
+	?>
+
+		<div class="updated settings-error notice is-dismissible">
+
+			<p><strong><?php print $notice ?></strong></p>
+			<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>
+
+		</div>
+
+	<?php
+
+		endforeach;
 
 	}
 
@@ -341,7 +424,6 @@ class NationPress {
  * @var class NationPress $nationpress
  */
 
-require_once('nationpress-template-tags.php');
 $nationpress = new NationPress();
 
 

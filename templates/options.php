@@ -62,7 +62,7 @@
 									</td>
     							</tr>
     							<tr valign="top">
-    								<th scope="row"><label for="tags">Tags (separate with comma)</label></th>
+    								<th scope="row"><label for="tags">Default Tags on account creation (separate with comma)</label></th>
     								<td>
 										<input type="text" class="regular-text" id="tags" name="tags" value="<?php echo esc_attr( get_option('tags') ); ?>">
 									</td>
