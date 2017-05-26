@@ -6,7 +6,18 @@ Connect your WordPress site to your Nation.
 
 # Shortcode
 
-**[nationpress-signup]**
+`[nationpress-signup]`
+
+```
+@buttontext: The Submit button
+@tags: Comma separated tags to add to the supporter
+@redirect: The page to redirect to on success
+@success: The message to display instead of redirecting
+
+```
+
+
+**[nationpress-signup buttontext="Sign Up Now"]**
 Will signup the user and apply the default tags.
 
 

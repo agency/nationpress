@@ -59,20 +59,29 @@ class NationPress {
 		
 		// Create Nation
 		if ($this->options_exist()) $this->nation = new Nation($this->options);
+
+		// var_dump($this->nation);
+		// die;
 				
 	}
 
 	public function save($vars, $return = true){
-		
-		$response = $this->push( $vars['email'], $vars['first_name'], $vars['last_name'], $vars['tags']);
+
+		$response = $this->push( $vars, $vars['tags']);
 		
 		if($response['person_id']){
 			$result = array('success'=>true,'response'=>$response);
+
 		} else {
 			$result = array('errors'=>true,'response'=>$response);
 		}
 
-		if($return == true) return $result;
+		if($return == true) {
+			if($vars['redirect']) $this->redirect($vars['redirect']);
+			if($vars['success']) $this->messages[] = $vars['success'];
+			if(!$vars['success']) $this->messages[] = "Thanks for signing up.";
+			return $result;
+		}
 
 		$this->output_json($result);
 		
@@ -266,8 +275,13 @@ class NationPress {
 		$password = wp_generate_password();
 		is_multisite() ? wpmu_signup_user( $username, $email, $meta ) : wp_create_user( $username, $password, $email );
 
+		$person = array();
+		$pseron['email'] = $_POST['user_email'];
+		$pseron['first_name'] = $_POST['first_name'];
+		$pseron['last_name'] = $_POST['last_name'];
+
 		// Send to Nationbuilder
-		$response = $this->push( $email, $first_name, $last_name );
+		$response = $this->push( $person );
 
 		return $response;
 	}
@@ -279,11 +293,13 @@ class NationPress {
 	 */
 	public function push_WP_user( $user_id ) {
 		// get user data
-		$email = $_POST['user_email'];
-		$first_name = $_POST['first_name'];
-		$last_name = $_POST['last_name'];
 
-		$this->push( $email, $first_name, $last_name );
+		$person = array();
+		$person['email'] = $_POST['user_email'];
+		$person['first_name'] = $_POST['first_name'];
+		$person['last_name'] = $_POST['last_name'];
+
+		$this->push( $person );
 	}
 
 	/**
@@ -297,11 +313,13 @@ class NationPress {
 	public function push_WPMU_user( $user_id, $password, $meta ) {
 		// get user data
 		$userdata = get_userdata( $user_id );
-		$email = $userdata->user_email;
-		$first_name = $meta['first_name'];
-		$last_name = $meta['last_name'];
 
-		$this->push( $email, $first_name, $last_name );
+		$person = array();
+		$person['email'] = $userdata->user_email;
+		$person['first_name'] = $meta['first_name'];
+		$person['last_name'] = $meta['last_name'];
+
+		$this->push( $person );
 	}
 
 	/**
@@ -312,21 +330,23 @@ class NationPress {
 	 * @return type
 	 */
 
-	public function push( $email, $first_name = null, $last_name = null, $tags = null ) {
+	public function push( $user_data, $tags = null ) {
 
 		// Tags
-		if(!tags){
+		if(!$tags){
 			$tags = array();
 			$tag_string = $this->options['tags'];
 			$tags = explode(', ', $tag_string);
 		}
+
+
 
 		// Response
 		$response = array();
 		$response['errors'] = 0;
 
 		// Dedupe Email against Nationbuilder
-		$match_response = $this->nation->matchPerson($email);
+		$match_response = $this->nation->matchPerson($user_data['email']);
 
 		// get ID if email exists, or add to NB if not
 		if ($match_response['code'] == 200) {
@@ -339,22 +359,26 @@ class NationPress {
 
 		} else {
 
-			$person = array();
-			$person['email'] = $email;
-			$person['first_name'] = $first_name;
-			$person['last_name'] = $last_name;
+
 
 			// get NB response
-			$nb_response = $this->nation->pushPerson($person);
+			$nb_response = $this->nation->pushPerson($user_data);
+
 
 			// get ID created by NB
-			$person_id = $nb_response['result']['person']['id'];
-			$response['person_id'] = $person_id;
+			if($nb_response['code'] != 200){
+				$response['errors'] = 1;
+				$this->messages[] = "Sorry, something when wrong.";
+			} else {
+				$person_id = $nb_response['result']['person']['id'];
+				$response['person_id'] = $person_id;
+			}
 
 			// set response
 			$response['duplicate'] = false;
 
 		}
+
 		
 
 		// Add Tags
@@ -435,9 +459,9 @@ class NationPress {
 
 	public function frontend_messages(){
 
-		if(!$this->messages) return;
+		if(empty($this->messages)) return;
 
-		foreach($this->messages as $messages) :
+		foreach($this->messages as $message) :
 		?>
 
 			<div class="message"><?php echo $message; ?></div>

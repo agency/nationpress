@@ -1,4 +1,5 @@
 
+<?php do_action('nationpress_messages'); ?>
 
 <form class="signup" action="<?php echo get_permalink(); ?>" method="post">
 
@@ -22,7 +23,9 @@
 
 	<?php do_action('nationpress_before_submit'); ?>
 
-	<?php if($attr['tags']) : ?><input type="hidden" name="<?php echo $attr['tags'];?>"><?php endif; ?>
+	<?php if($attr['tags']) : ?><input type="hidden" name="tags" value="<?php echo $attr['tags'];?>"><?php endif; ?>
+	<?php if($attr['redirect']) : ?><input type="hidden" name="redirect" value="<?php echo $attr['redirect']; ?>"><?php endif; ?>
+	<?php if($attr['success']) : ?><input type="hidden" name="success" value="<?php echo $attr['success']; ?>"><?php endif; ?>
 
 	<button class="button-primary" type="submit" name="button"><?php echo ($attr['buttontext']) ? $attr['buttontext'] : 'Sign Up'; ?></button>
 
