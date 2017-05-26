@@ -339,65 +339,53 @@ class NationPress {
 			$tags = explode(', ', $tag_string);
 		}
 
-
-
 		// Response
 		$response = array();
 		$response['errors'] = 0;
 
-		// Dedupe Email against Nationbuilder
-		$match_response = $this->nation->matchPerson($user_data['email']);
+		// Push Person (match of create)
+		$nb_response = $this->nation->pushPerson($user_data);
 
-		// get ID if email exists, or add to NB if not
-		if ($match_response['code'] == 200) {
+		if($nb_response['code'] == 200 || $nb_response['code'] == 201){
 
-			$person_id = $match_response['result']['person']['id'];
+			// Success
+			$response['success'] = true;
+			$person_id = $nb_response['result']['person']['id'];
 			$response['person_id'] = $person_id;
-
-			// set response
-			$response['duplicate'] = true;
+			print "<pre>";
+			var_dump($nb_response);
+			print "</pre>";
 
 		} else {
 
+			print "<pre>";
+			var_dump($nb_response);
+			print "</pre>";
 
 
-			// get NB response
-			$nb_response = $this->nation->pushPerson($user_data);
-
-
-			// get ID created by NB
-			if($nb_response['code'] != 200){
-				$response['errors'] = 1;
-				$this->messages[] = "Sorry, something when wrong.";
-			} else {
-				$person_id = $nb_response['result']['person']['id'];
-				$response['person_id'] = $person_id;
-			}
-
-			// set response
-			$response['duplicate'] = false;
-
+			$response['errors'] = 1;
+			$this->messages[] = "Sorry, something when wrong.";
+			return;
 		}
 
 		
+		// add tags
+		if ( !empty( $tags ) ) {
 
-		// Add Tags
-		if (!empty($tags)) {
-			foreach ($tags as $tag) {
-				$tag_response = $this->nation->tagPerson($person_id, $tag);
-				if ($tag_response['code'] != 200) break;
+			foreach ( $tags as $tag ) {
+
+				$tag_response = $this->nation->tagPerson( $person_id, $tag );
+
+				if ( $tag_response['code'] != 200 ) break;
 			}
+
 		}
-		
-		// Set Response
-		if ($tag_response['code'] == 200) {
-			$response['tag'] == true;
-		} else {
-			$response['tag'] == false;
-		}
+
+		$response['tag'] = ( ( isset($tag_response) && $tag_response['code'] == 200 ) ? 'true' : 'false' );
+
 
 		// Apply Filters
-		$response = apply_filters('nationpress_response',$response, $match_response, $tag_response);
+		$response = apply_filters('nationpress_response',$response, $nb_response, $tag_response);
 
 		// Return 
 		return $response;
