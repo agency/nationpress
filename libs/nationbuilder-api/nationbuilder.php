@@ -157,6 +157,13 @@ class Nation {
 		$params = array('person' => $person);
 		$headers = array('Content-Type' => 'application/json');
 
+		print "<pre>";
+		print "<b>".$this->base_url . '/api/v1/people/push'."</b>\n";
+		print_r($params);
+		print_r($headers);
+		print "</pre>";
+		die;
+
 		$response = $this->client->fetch($this->base_url . '/api/v1/people/push', $params, 'PUT', $headers);
 		
 		return $response;
