@@ -28,11 +28,11 @@ User the listed tags instead of the default ones.
 
 # Hooks & Filters
 
-**nationpress_response**
+**nationpress_push_response**
 
 ```
-$response = apply_filters('nationpress_response', $response, $match_response, $tag_response);
-add_filter('nationpress_response','your_custom_function');
+$response = apply_filters('nationpress_push_response', $response, $match_response, $tag_response);
+add_filter('nationpress_push_response','your_custom_function');
 
 function your_custom_function($response, $person_response, $tag_response){
 	

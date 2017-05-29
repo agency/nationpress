@@ -13,15 +13,11 @@
 
 if (!defined('ABSPATH')) exit;
 
-// Includes
-// require_once(  WP_PLUGIN_DIR . '/nationpress/libs/nationbuilder-api/nationbuilder.php' );
 
 // Includes
-
 if(!class_exists('Httpful\Bootstrap')) require_once('libs/httpful.phar');
 require_once('classes/api.class.php');
 require_once('classes/nation.class.php');
-// require_once('libs/nationbuilder-api/init.php');
 
 
 /**
@@ -183,6 +179,8 @@ class NationPress {
 		}
 
 		$response['tag'] = ( ( isset($tag_response) && $tag_response->code == 200 ) ? 'true' : 'false' );
+
+		do_action('nationpress_push_response', $response, $response_person_push, $tag_response);
 
 		return $response;
 	}
