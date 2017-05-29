@@ -14,7 +14,14 @@
 if (!defined('ABSPATH')) exit;
 
 // Includes
-require_once(  WP_PLUGIN_DIR . '/nationpress/libs/nationbuilder-api/nationbuilder.php' );
+// require_once(  WP_PLUGIN_DIR . '/nationpress/libs/nationbuilder-api/nationbuilder.php' );
+
+// Includes
+
+if(!class_exists('Httpful\Bootstrap')) require_once('libs/httpful.phar');
+require_once('classes/api.class.php');
+require_once('classes/nation.class.php');
+// require_once('libs/nationbuilder-api/init.php');
 
 
 /**
@@ -27,6 +34,7 @@ class NationPress {
 
 	public $errors = false;
 	public $notices = false;
+	public $messages = false;
 	public $slug = 'nationpress';
 
 	function __construct() {
@@ -40,12 +48,7 @@ class NationPress {
 		$this->plugin_options_keys = array(
 			'nation_slug',
 			'redirect_url',
-			'client_id',
-			'client_secret',
-			'code',
 			'access_token',
-			'email_subject',
-			'email_message'
 		);
 
 
@@ -97,29 +100,89 @@ class NationPress {
 
 	}
 
+	/**
+	 * Save
+	 * Process form submission
+	 * @param array $vars 
+	 * @param bool $return 
+	 * @return array|null
+	 */
+
+	public function save($vars,$return = true){
+
+		// Send to NationBuilder
+		$response = $this->push($vars);
+		
+		// Process Response
+		if($response['person_id']){
+			
+			$result = array('success'=>true,'response'=>$response);
+
+		} else {
+			
+			$result = array('errors'=>true,'response'=>$response);
+
+		}
+
+		// Handle Return Action
+		if($return == true) {
+			if($vars['redirect']) $this->redirect($vars['redirect']);
+			if($vars['success']) $this->messages[] = $vars['success'];
+			if(!$vars['success']) $this->messages[] = "Thanks for signing up.";
+			return $result;
+		}
+
+		// Display JSON
+		$this->output_json($result);
+
+	}
+
+	/**
+	 * Push
+	 * Call the NationBuilder API
+	 * @param array $vars 
+	 * @return array
+	 */
+
 	public function push($vars){
 
+		$response = array();
+
 		// get NB response
-		$nb_response = $this->nation->pushPerson($vars);
+		$response_person_push = $this->nation->push_person($vars['person']);
 
 		// get ID created by NB
-		$person_id = $nb_response['result']['person']['id'];
+		$person_id = $response_person_push->body->person->id;
 
-		$response['duplicate'] = 'false';
+		if($person_id) {
+			$response['person_id'] = $person_id;
+		} else {
 
+			$response['person_id'] = null;
+			$response['result'] = $response_person_push;
+			return $response;
+		}
+		
 		// add tags
-		if ( !empty( $tags ) ) {
+		if ( !empty( $vars['tags'] ) ) {
 
-			foreach ( $tags as $tag ) {
+			// Split it up
+			$vars['tags'] = explode(',', $vars['tags']);
 
-				$tag_response = $this->nation->tagPerson( $person_id, $tag );
+			foreach ( $vars['tags'] as $tag ) {
 
-				if ( $tag_response['code'] != 200 ) break;
+				// Gaurd
+				if(empty($tag)) continue;
+
+				// Tag The Person
+				$tag_response = $this->nation->tag_person( $person_id, $tag );
+				if ( $tag_response->code != 200 ) break;
+
 			}
 
 		}
 
-		$response['tag'] = ( ( isset($tag_response) && $tag_response['code'] == 200 ) ? 'true' : 'false' );
+		$response['tag'] = ( ( isset($tag_response) && $tag_response->code == 200 ) ? 'true' : 'false' );
 
 		return $response;
 	}
@@ -138,12 +201,12 @@ class NationPress {
 
 	public function forms() {
 
-		if (!isset($_POST['plugin_starter_action'])) return;
+		if (!isset($_POST['nationpress_action'])) return;
 
-		switch ($_POST['plugin_starter_action']) {
+		switch ($_POST['nationpress_action']) {
 
-			case 'action':
-				// $this->action($_POST);
+			case 'save':
+				$this->save($_POST['nationpress']);
 				break;
 
 			default:
@@ -166,7 +229,7 @@ class NationPress {
 		switch ($pagename) {
 
 			case 'nationpress/api/save':
-				// $this->api($_GET);
+				$this->save($_POST,false);
 				break;
 
 			default:
@@ -420,10 +483,8 @@ class NationPress {
 
 }
 
-
+// ------------------------------------
+// Go
+// ------------------------------------
 
 $nationpress = new NationPress();
-
-
-
-
