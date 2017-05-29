@@ -227,7 +227,7 @@ class NationPress {
 		switch ($pagename) {
 
 			case 'nationpress/api/save':
-				$this->save($_POST,false);
+				$this->save($_POST['nationpress'],false);
 				break;
 
 			default:
