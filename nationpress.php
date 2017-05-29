@@ -129,7 +129,7 @@ class NationPress {
 		}
 
 		// Display JSON
-		$this->output_json($result);
+		$this->output_json($response);
 
 	}
 
