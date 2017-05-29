@@ -129,7 +129,8 @@ class NationPress {
 		}
 
 		// Display JSON
-		$this->output_json($response);
+		$this->output_json($result);
+		die;
 
 	}
 
@@ -228,6 +229,7 @@ class NationPress {
 
 			case 'nationpress/api/save':
 				$this->save($_POST['nationpress'],false);
+				die;
 				break;
 
 			default:
