@@ -19,6 +19,11 @@ if(!class_exists('Httpful\Bootstrap')) require_once('libs/httpful.phar');
 require_once('classes/api.class.php');
 require_once('classes/nation.class.php');
 
+// OAuth 2
+require('OAuth2/client.php');
+require('OAuth2/GrantType/IGrantType.php');
+require('OAuth2/GrantType/AuthorizationCode.php');
+
 
 /**
  * Main NationPress Class
@@ -42,9 +47,13 @@ class NationPress {
 
 		// Plugin Options
 		$this->plugin_options_keys = array(
-			'nation_slug',
-			'redirect_url',
-			'access_token',
+			'nation_slug', // Slug of the nationbuilder nation
+			'redirect_url', // Redirect Url required by OAuth
+			'access_token', // OAuth Access token
+			'api_access', // Choosing app or api
+			'nb_auth_code', // Auth code to use when creating OAuth Token
+			'nb_client_id', // ID of the app
+			'nb_client_secret' // Secret of the app
 		);
 
 
@@ -68,7 +77,7 @@ class NationPress {
 		// Get Options
 		$this->options = $this->get_options();
 		if ($this->options_exist()) $this->nation = new Nation($this->options);
-			
+
 
 	}
 
@@ -82,8 +91,8 @@ class NationPress {
 
 	/**
 	 * Shortcode Signup Form
-	 * @param array $attr 
-	 * @param string $content 
+	 * @param array $attr
+	 * @param string $content
 	 * @return null
 	 */
 
@@ -99,8 +108,8 @@ class NationPress {
 	/**
 	 * Save
 	 * Process form submission
-	 * @param array $vars 
-	 * @param bool $return 
+	 * @param array $vars
+	 * @param bool $return
 	 * @return array|null
 	 */
 
@@ -108,14 +117,14 @@ class NationPress {
 
 		// Send to NationBuilder
 		$response = $this->push($vars);
-		
+
 		// Process Response
 		if($response['person_id']){
-			
+
 			$result = array('success'=>true,'response'=>$response);
 
 		} else {
-			
+
 			$result = array('errors'=>true,'response'=>$response);
 
 		}
@@ -137,7 +146,7 @@ class NationPress {
 	/**
 	 * Push
 	 * Call the NationBuilder API
-	 * @param array $vars 
+	 * @param array $vars
 	 * @return array
 	 */
 
@@ -159,7 +168,7 @@ class NationPress {
 			$response['result'] = $response_person_push;
 			return $response;
 		}
-		
+
 		// add tags
 		if ( !empty( $vars['tags'] ) ) {
 
@@ -281,10 +290,10 @@ class NationPress {
 		$keys = $this->options;
 
 		foreach ($keys as $key => $value) {
-			
+
 			if ($key == '' && $value != 'email_subject' && $value != 'email_message') {
 
-				$this->errors[] = "NationPress: Complete your setup <a href=\"/wp-admin/admin.php?page=nationpress_options\">here</a>.";	
+				$this->errors[] = "NationPress: Complete your setup <a href=\"/wp-admin/admin.php?page=nationpress_options\">here</a>.";
 				return false;
 
 			}
@@ -343,7 +352,7 @@ class NationPress {
 	 * Display success messages to the admin
 	 * @return type
 	 */
-	
+
 	public function admin_success() {
 
 		if(!$this->notices) return;
@@ -451,11 +460,11 @@ class NationPress {
 		$path = $this->template($template);
 		include($path);
 	}
-	
+
 	/**
 	 * Redirect
 	 * Simple wordpress redirect
-	 * @param string|int $path 
+	 * @param string|int $path
 	 * @return null
 	 */
 
@@ -469,7 +478,7 @@ class NationPress {
 
 	/**
 	 * Output JSON
-	 * @param array|object $array 
+	 * @param array|object $array
 	 * @return JSON
 	 */
 
