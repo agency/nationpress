@@ -195,6 +195,40 @@ class NationPress {
 		return $response;
 	}
 
+	public static function auth_url() {
+		return Nation::auth_url();
+	}
+
+	public function save_auth($code) {
+		$current_user = wp_get_current_user();
+		if (user_can( $current_user, 'administrator' )) {
+			update_option( 'nb_auth_code', $code );
+
+			wp_redirect( site_url() . '/wp-admin/options-general.php?page=nationpress_options' );
+			exit;
+		}
+	}
+
+	public function regen_token() {
+		$current_user = wp_get_current_user();
+		if (user_can( $current_user, 'administrator' )) {
+
+			$url = site_url() . '/wp-admin/options-general.php?page=nationpress_options';
+
+			$token = Nation::generate_token( get_option('nb_auth_code') );
+
+			if (array_key_exists('error', $token)) {
+				$url .= '&msg-error=' . urlencode( 'NationPress: ' . $token['error_description']);
+			} else {
+				update_option( 'access_token', $token['access_token'] );
+			}
+
+			wp_redirect( $url );
+			exit;
+
+		}
+	}
+
 	// ------------------------------------------------------------------------
 	//
 	// Default Wordpress Plugin Setup
@@ -209,16 +243,20 @@ class NationPress {
 
 	public function forms() {
 
-		if (!isset($_POST['nationpress_action'])) return;
+		if (isset($_GET['msg-error'])) $this->errors[] = $_GET['msg-error'];
+		if (isset($_GET['msg-notice'])) $this->notices[] = $_GET['msg-notice'];
 
-		switch ($_POST['nationpress_action']) {
+		if (isset($_POST['nationpress_action'])) {
+			switch ($_POST['nationpress_action']) {
 
-			case 'save':
-				$this->save($_POST['nationpress']);
-				break;
+				case 'save':
+					$this->save($_POST['nationpress']);
+					break;
 
-			default:
-				break;
+				default:
+					break;
+
+			}
 		}
 
 	}
@@ -239,6 +277,14 @@ class NationPress {
 			case 'nationpress/api/save':
 				$this->save($_POST['nationpress'],false);
 				die;
+				break;
+
+			case 'nationpress/oauth/auth':
+				$this->save_auth($_GET['code']);
+				break;
+
+			case 'nationpress/oauth/token':
+				$this->regen_token();
 				break;
 
 			default:
