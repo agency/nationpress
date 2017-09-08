@@ -2,7 +2,7 @@
 /**
  * Kepla API Class
  * --------------------------------
- * 
+ *
  */
 
 
@@ -63,7 +63,7 @@ class NationPressAPI {
 
 	/**
 	 * GET Request
-	 * @param string $path 
+	 * @param string $path
 	 * @return obj Server response object
 	 */
 
@@ -85,7 +85,7 @@ class NationPressAPI {
 	/**
 	 * PUT Request
 	 * @param string $path
-	 * @param array|obj $data the data to send 
+	 * @param array|obj $data the data to send
 	 * @return obj Server response object
 	 */
 
@@ -103,7 +103,7 @@ class NationPressAPI {
 	/**
 	 * POST Request
 	 * @param string $path
-	 * @param array|obj $data the data to send 
+	 * @param array|obj $data the data to send
 	 * @return obj Server response object
 	 */
 
@@ -130,6 +130,34 @@ class NationPressAPI {
 
 	}
 
+	/**
+	 * Generate a client
+	 */
+	public static function oauth_client($client_id, $client_secret) {
+		return new OAuth2\Client( get_option('nb_client_id'), get_option('nb_client_secret') );
+	}
+
+	/**
+	 * Generate auth url
+	 */
+	public static function auth_url() {
+
+		$client = self::create_oauth_client( get_option('nb_client_id'), get_option('nb_client_secret') );
+		return $client->getAuthenticationUrl('https://' . get_option('nation_slug') . '.nationbuilder.com/oauth/authorize', get_option('redirect_url'));;
+
+	}
+
+	/**
+	 * Generate auth token
+	 */
+	public static function generate_token($code) {
+
+		$client = self::create_oauth_client( get_option('nb_client_id'), get_option('nb_client_secret') );
+		$params = array('code' => $code, 'redirect_url' => get_option('redirect_url'));
+		$response = $client->getAccessToken('https://' . get_option('nation_slug') . '.nationbuilder.com/oauth/token', 'authorization_code', $params);
+		return $response['result']['access_token'];
+
+	}
 
 }
 ?>

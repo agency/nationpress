@@ -12,7 +12,7 @@ class Nation {
 
 	/**
 	 * Get Person
-	 * @param int $person_id 
+	 * @param int $person_id
 	 * @return object
 	 */
 
@@ -24,10 +24,10 @@ class Nation {
 
 	/**
 	 * Match Person
-	 * @param string $email 
+	 * @param string $email
 	 * @return object
 	 */
-	
+
 	public function match_person($email){
 
 		return NationPressAPI::get('/people/match',array('email'=>$email));
@@ -36,7 +36,7 @@ class Nation {
 
 	/**
 	 * Push Person
-	 * @param array $person 
+	 * @param array $person
 	 * @return object
 	 */
 
@@ -49,8 +49,8 @@ class Nation {
 
 	/**
 	 * Update Person
-	 * @param int $person_id 
-	 * @param array $person 
+	 * @param int $person_id
+	 * @param array $person
 	 * @return object
 	 */
 
@@ -63,8 +63,8 @@ class Nation {
 
 	/**
 	 * Tag Person
-	 * @param int $person_id 
-	 * @param string $tag 
+	 * @param int $person_id
+	 * @param string $tag
 	 * @return object
 	 */
 
@@ -77,8 +77,8 @@ class Nation {
 
 	/**
 	 * Remove Tag
-	 * @param int $person_id 
-	 * @param string $tag 
+	 * @param int $person_id
+	 * @param string $tag
 	 * @return object
 	 */
 

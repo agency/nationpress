@@ -67,7 +67,7 @@
 						<p><b>To generate a new token:</b></p>
 						<ol>
 							<li>Next to <b>OAuth Authentiation Code</b> Click <b>Get Code</b>. This will prompt you to log in to nationbuilder.</li>
-							<li>After logging into nationbuilder you will be redirected to a new page with no content that should look like <b>http://localhost/?code=8124f4540a8479395cc37177ebaa8e57e8f0b100ccce2ab58e73a99a7186ecc2</b></li>
+							<li>After logging into nationbuilder you will be redirected to a new page with no content that should look like <b>http://localhost/?code={Auth Code}</b></li>
 							<li>Copy the letters and numbers in the url after where it says <b>?code=</b> into the text box and click save. This will be done for you if you are logged in and the redirect url in the box above and in NationBuilder is <b><?php echo site_url(); ?>/nationbuilder/oauth</b></li>
 							<li>You should then be able to click <b>Regenerate Token</b> to create a new Access token</li>
 						</ol>
