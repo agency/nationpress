@@ -72,6 +72,7 @@
 							<li>Copy the letters and numbers in the url after where it says <b>?code=</b> into the text box and click save. This will be done for you if you are logged in and the redirect url in the box above and in NationBuilder is <b><?php echo site_url(); ?>/nationpress/oauth/auth</b></li>
 							<li>You should then be able to click <b>Regenerate Token</b> to create a new Access token</li>
 						</ol>
+						<p>If you find that the code has expired, you'll need to create a new authentication code before regenerating the token.</p>
 
 						<table class="form-table">
 							<tbody>
